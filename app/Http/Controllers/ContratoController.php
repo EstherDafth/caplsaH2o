@@ -7,6 +7,7 @@ use App\Models\DireccionToma;
 use App\Models\Documento;
 use App\Models\TomaAgua;
 use App\Models\Usuario;
+use App\Models\TipoDocumento;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -29,7 +30,7 @@ class ContratoController extends Controller
                 ];
             });
 
-        return Inertia::render('Contratos', [
+        return Inertia::render('WizardContrato', [
             'contratos' => $contratos
         ]);
     }
@@ -46,7 +47,7 @@ class ContratoController extends Controller
 
         $direccion = DireccionToma::create($validated);
 
-        return redirect()->back()->with([
+        return response()->json([
             'success' => 'Dirección registrada correctamente.',
             'direccion_id' => $direccion->iddireccion
         ]);
@@ -54,19 +55,15 @@ class ContratoController extends Controller
 
     public function storeTomaAgua(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'tipo_toma' => 'required|string|max:50',
             'estatus' => 'required|string|max:50',
             'direccion_toma_iddireccion' => 'required|exists:direccion_toma,iddireccion'
         ]);
 
-        $toma = TomaAgua::create([
-            'tipo_toma' => $request->tipo_toma,
-            'estatus' => $request->estatus,
-            'direccion_toma_iddireccion' => $request->direccion_toma_iddireccion
-        ]);
+        $toma = TomaAgua::create($validated);
 
-        return redirect()->back()->with([
+        return response()->json([
             'success' => 'Toma de agua registrada.',
             'toma_id' => $toma->idtoma_agua
         ]);
@@ -75,34 +72,45 @@ class ContratoController extends Controller
     public function buscarUsuario(Request $request)
     {
         $validated = $request->validate([
-            'nombre' => 'required|string|max:255',
-            'a_paterno' => 'required|string|max:255',
-            'a_materno' => 'required|string|max:255',
+            'nombre_completo' => 'required|string|max:255',
             'correo_electronico' => 'required|email|max:255',
             'telefono' => 'nullable|string|max:20',
             'celular' => 'nullable|string|max:20',
         ]);
 
-        $usuario = Usuario::where('nombre', $validated['nombre'])
-            ->where('a_paterno', $validated['a_paterno'])
-            ->where('a_materno', $validated['a_materno'])
+        $partes = preg_split('/\s+/', trim($validated['nombre_completo']));
+        $nombre = $partes[0] ?? '';
+        $a_paterno = $partes[1] ?? '';
+        $a_materno = $partes[2] ?? '';
+
+        $usuario = Usuario::where('nombre', 'like', "%$nombre%")
+            ->where('a_paterno', 'like', "%$a_paterno%")
+            ->where('a_materno', 'like', "%$a_materno%")
             ->where('correo_electronico', $validated['correo_electronico'])
             ->first();
 
         if ($usuario) {
-            return redirect()->back()->with([
+            return response()->json([
                 'exists' => true,
-                'usuario_id' => $usuario->id_usuarios
+                'usuario' => $usuario
             ]);
         }
 
-        $validated['roles_tipo_id_rol'] = 3;
-        $nuevo = Usuario::create($validated);
-
-        return redirect()->back()->with([
-            'exists' => false,
-            'usuario_id' => $nuevo->id_usuarios
+        $nuevo = Usuario::create([
+            'nombre' => $nombre,
+            'a_paterno' => $a_paterno,
+            'a_materno' => $a_materno,
+            'correo_electronico' => $validated['correo_electronico'],
+            'telefono' => $validated['telefono'],
+            'celular' => $validated['celular'],
+            'roles_tipo_id_rol' => 3
         ]);
+
+        return back()->with([
+            'usuario' => $usuario ?? $nuevo,
+            'exists' => $usuario ? true : false
+        ]);
+
     }
 
     public function storeContrato(Request $request)
@@ -112,7 +120,10 @@ class ContratoController extends Controller
             'toma_id' => 'required|exists:toma_agua,idtoma_agua',
         ]);
 
-        $numero = str_pad(rand(0, 9999), 4, '0', STR_PAD_LEFT);
+        // Genera un número único con prefijo, fecha y random
+        do {
+            $numero = 'CTR-' . now()->format('Ymd') . '-' . rand(1000, 9999);
+        } while (Contrato::where('numero_contrato', $numero)->exists());
 
         $contrato = Contrato::create([
             'numero_contrato' => $numero,
@@ -122,7 +133,7 @@ class ContratoController extends Controller
             'toma_agua_idtoma_agua' => $validated['toma_id']
         ]);
 
-        return redirect()->route('contratos.index')->with([
+        return response()->json([
             'success' => 'Contrato registrado correctamente.',
             'contrato_id' => $contrato->idcontrato
         ]);
@@ -130,9 +141,9 @@ class ContratoController extends Controller
 
     public function storeDocumento(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'documento' => 'required|file',
-            'contrato_id' => 'required|integer|exists:contrato,idcontrato',
+            'contrato_id' => 'required|exists:contrato,idcontrato',
             'tipo_documento_id' => 'required|integer',
         ]);
 
@@ -140,11 +151,11 @@ class ContratoController extends Controller
 
         Documento::create([
             'ruta_documento' => $path,
-            'contrato_idcontrato' => $request->contrato_id,
-            'tipo_documento_idtipo_documento' => $request->tipo_documento_id,
+            'contrato_idcontrato' => $validated['contrato_id'],
+            'tipo_documento_idtipo_documento' => $validated['tipo_documento_id'],
         ]);
 
-        return redirect()->back()->with('success', 'Documento subido correctamente.');
+        return response()->json(['success' => 'Documento subido correctamente.']);
     }
 
     public function update(Request $request, $id)
@@ -162,7 +173,7 @@ class ContratoController extends Controller
             $contrato->tomaAgua->save();
         }
 
-        return redirect()->route('contratos.index')->with('success', 'Contrato finalizado correctamente.');
+        return response()->json(['success' => 'Contrato finalizado correctamente.']);
     }
 
     public function destroy($id)
@@ -170,11 +181,46 @@ class ContratoController extends Controller
         $contrato = Contrato::find($id);
 
         if (!$contrato) {
-            return redirect()->back()->withErrors('Contrato no encontrado.');
+            return response()->json(['error' => 'Contrato no encontrado.'], 404);
         }
 
         $contrato->delete();
 
-        return redirect()->back()->with('success', 'Contrato eliminado correctamente.');
+        return response()->json(['success' => 'Contrato eliminado correctamente.']);
     }
+
+    public function tiposDocumento()
+    {
+        return response()->json(\App\Models\TipoDocumento::all());
+    }
+    public function create()
+    {
+        return Inertia::render('Contratos/WizardContrato', [
+            'auth' => auth()->user(),
+            'tipoDocumentos' => TipoDocumento::all(['idtipo_documento as id', 'nombre']),
+        ]);
+    }
+
+    public function wizard()
+    {
+
+        return Inertia::render('WizardContrato', [
+            'auth' => auth()->user(),
+            'tipoDocumentos' => \App\Models\TipoDocumento::all([
+                'idtipo_documento as id',
+                'tipo_documento as nombre'
+            ]),
+        ]);
+    }
+
+    public function listarTipos()
+    {
+        return response()->json(\App\Models\TipoDocumento::all());
+    }
+
+    public function obtenerTipos()
+    {
+        return response()->json(TipoDocumento::all());
+    }
+
 }

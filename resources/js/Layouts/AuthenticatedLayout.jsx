@@ -50,10 +50,10 @@ export default function AuthenticatedLayout({ header, children }) {
                                     Tomas de agua
                                 </NavLink>
                                 <NavLink
-                                href={route('clientes.index')}
-                                active={route().current('clientes.index')}
+                                href={route('contratos.index')}
+                                active={route().current('contratos.index')}
                                 >
-                                Ofertas
+                                Contrato
                             </NavLink>
                             </div>
                         </div>

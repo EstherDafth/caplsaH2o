@@ -35,4 +35,5 @@ class TomaAgua extends Model
     {
         return $this->direccion ? $this->direccion->cliente() : null;
     }
+
 }
