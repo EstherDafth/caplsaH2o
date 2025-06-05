@@ -10,6 +10,7 @@ class TomaAgua extends Model
     use SoftDeletes;
     protected $table = 'toma_agua';
     protected $primaryKey = 'idtoma_agua';
+    public $incrementing = true;
     public $timestamps = false;
 
     protected $fillable = [

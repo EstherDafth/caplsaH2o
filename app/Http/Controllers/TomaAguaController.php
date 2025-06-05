@@ -51,20 +51,17 @@ class TomaAguaController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'tipo_toma' => 'required|string|max:30',
             'estatus' => 'required|string|max:15',
             'direccion_toma_iddireccion' => 'required|exists:direccion_toma,iddireccion',
         ]);
 
-        TomaAgua::create($request->only([
-            'tipo_toma',
-            'estatus',
-            'direccion_toma_iddireccion',
-        ]));
+        $tomaAgua = TomaAgua::create($validated);
 
-        return redirect()->back()->with('success', 'Toma de agua registrada correctamente.');
+        return response()->json(['id' => $tomaAgua->idtoma_agua]);
     }
+
 
     public function update(Request $request, $id)
     {

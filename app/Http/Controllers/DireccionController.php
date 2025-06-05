@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\DireccionToma;
 use Inertia\Inertia;
+use Illuminate\Http\Request;
+
 
 class DireccionController extends Controller
 {
@@ -30,4 +32,23 @@ class DireccionController extends Controller
             'direcciones' => $direcciones,
         ]);
     }
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'codigo_postal' => 'required|string|max:10',
+            'estado' => 'required|string|max:100',
+            'municipio' => 'required|string|max:100',
+            'colonia' => 'required|string|max:100',
+            'calle' => 'required|string|max:100',
+            'numero_interior' => 'nullable|string|max:10',
+            'numero_exterior' => 'required|string|max:10',
+            'referencias' => 'nullable|string|max:255',
+        ]);
+
+        $direccion = DireccionToma::create($validated);
+
+        return response()->json(['id' => $direccion->iddireccion]);
+    }
+
+
 }

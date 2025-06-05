@@ -8,7 +8,14 @@ use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\DireccionController;
 use App\Http\Controllers\TomaAguaController;
 use App\Http\Controllers\ContratoController;
+use App\Http\Controllers\GestionContratoController;
+use App\Http\Controllers\FilesController;
 
+Route::prefix('files')->group(function () {
+    Route::get('/download/{filename}', [FilesController::class, 'download'])->name('files.download');
+    Route::get('/view/{filename}', [FilesController::class, 'view'])->name('files.view');
+    Route::delete('/delete/{filename}', [FilesController::class, 'delete'])->name('files.delete');
+});
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -48,6 +55,7 @@ Route::get('/toma_agua', [TomaAguaController::class, 'index'])->name('toma_agua.
 Route::post('/toma_agua', [TomaAguaController::class, 'store'])->name('toma_agua.store');
 Route::put('/toma_agua/{id}', [TomaAguaController::class, 'update'])->name('toma_agua.update');
 Route::delete('/toma_agua/{id}', [TomaAguaController::class, 'destroy'])->name('toma_agua.destroy');
+Route::post('/tomas', [TomaAguaController::class, 'store'])->name('tomas.store');
 
 Route::get('/WizardContrato', function () {
     return Inertia::render('WizardContrato');
@@ -95,3 +103,20 @@ Route::get('/api/tipo-documentos', [ContratoController::class, 'obtenerTipos'])-
 Route::post('/contratos/buscar-usuario', [ContratoController::class, 'buscarUsuario'])->name('contratos.buscar-usuario');
 Route::post('/contratos', [ContratoController::class, 'store'])->name('contratos.store');
 Route::resource('contratos', ContratoController::class);
+Route::post('/contratos', [ContratoController::class, 'store']);
+Route::post('/contratos', [ContratoController::class, 'store'])->name('contratos.store');
+
+Route::post('/contratos/buscar-usuario', [ContratoController::class, 'buscarUsuario']);
+Route::post('/toma-agua', [ContratoController::class, 'storeTomaAgua'])->name('toma-agua.store');
+Route::post('/direccion', [DireccionController::class, 'store'])->name('direccion.store');
+Route::get('/contratos/pdf/{id}', [ContratoController::class, 'generarPDF'])->name('contratos.pdf');
+Route::get('/contratos/{numero}/pdf', [ContratoController::class, 'descargarPDF']);
+
+// Agrupadas en un controlador llamado GestionContratoController
+Route::prefix('gestion-contratos')->group(function () {
+    Route::get('/', [GestionContratoController::class, 'index'])->name('gestion-contratos.index'); // Lista
+    Route::get('/{id}/edit', [GestionContratoController::class, 'edit'])->name('gestion-contratos.edit'); // Formulario de edición
+    Route::put('/{id}', [GestionContratoController::class, 'update'])->name('gestion-contratos.update'); // Guardar edición
+    Route::delete('/{id}', [GestionContratoController::class, 'destroy'])->name('gestion-contratos.destroy'); // Eliminar
+    Route::get('/{id}/pdf', [GestionContratoController::class, 'generarPDF'])->name('gestion-contratos.pdf'); // Descargar PDF
+});

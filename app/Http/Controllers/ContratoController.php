@@ -10,6 +10,7 @@ use App\Models\Usuario;
 use App\Models\TipoDocumento;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ContratoController extends Controller
 {
@@ -71,6 +72,7 @@ class ContratoController extends Controller
 
     public function buscarUsuario(Request $request)
     {
+
         $validated = $request->validate([
             'nombre_completo' => 'required|string|max:255',
             'correo_electronico' => 'required|email|max:255',
@@ -106,11 +108,10 @@ class ContratoController extends Controller
             'roles_tipo_id_rol' => 3
         ]);
 
-        return back()->with([
-            'usuario' => $usuario ?? $nuevo,
-            'exists' => $usuario ? true : false
+        return response()->json([
+            'exists' => false,
+            'usuario' => $nuevo
         ]);
-
     }
 
     public function storeContrato(Request $request)
@@ -221,6 +222,40 @@ class ContratoController extends Controller
     public function obtenerTipos()
     {
         return response()->json(TipoDocumento::all());
+    }
+
+    public function store(Request $request)
+    {
+        // 1. Validar y guardar contrato sin numero_contrato
+        $contrato = Contrato::create([
+            'usuarios_id_usuarios' => $request->cliente_id,
+            'fecha_inicio' => $request->fecha_inicio,
+            'toma_agua_idtoma_agua' => $request->toma_agua_idtoma_agua,
+        ]);
+
+        // 2. Obtener el cliente
+        $cliente = Usuario::find($request->cliente_id);
+
+        // 3. Generar número de contrato
+        $ap_paterno = strtoupper(substr($cliente->a_paterno ?? '', 0, 2));
+        $ap_materno = strtoupper(substr($cliente->a_materno ?? '', 0, 2));
+        $numero_contrato = $ap_paterno . $ap_materno . $contrato->idcontrato;
+
+        // 4. Guardar número de contrato
+        $contrato->numero_contrato = $numero_contrato;
+        $contrato->save();
+
+        // 5. Retornar respuesta
+        return redirect()->route('contratos.index')->with('success', 'Contrato creado con éxito');
+    }
+
+    public function generarPDF($id)
+    {
+        $contrato = Contrato::with(['usuario', 'tomaAgua.direccion'])->findOrFail($id);
+
+        $pdf = Pdf::loadView('pdf.contrato', compact('contrato'));
+
+        return $pdf->download('Contrato_' . $contrato->numero_contrato . '.pdf');
     }
 
 }
