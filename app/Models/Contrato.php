@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\TomaAgua;
+use App\Models\Cliente;
 
 
 
@@ -63,4 +65,8 @@ class Contrato extends Model
         });
     }
 
+    public function toma_agua()
+    {
+        return $this->belongsTo(TomaAgua::class, 'toma_agua_idtoma_agua', 'idtoma_agua');
+    }
 }

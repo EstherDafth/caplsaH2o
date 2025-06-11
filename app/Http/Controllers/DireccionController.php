@@ -50,5 +50,23 @@ class DireccionController extends Controller
         return response()->json(['id' => $direccion->iddireccion]);
     }
 
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'calle' => 'required|string|max:255',
+            'numero' => 'required|string|max:50',
+            'colonia' => 'required|string|max:255',
+            'municipio' => 'required|string|max:255',
+            'estado' => 'required|string|max:255',
+            'codigo_postal' => 'required|string|max:10',
+            'cliente_id' => 'required|exists:usuarios,id_usuarios'
+        ]);
+
+        $direccion = DireccionToma::findOrFail($id);
+        $direccion->update($request->all());
+
+        return response()->json($direccion);
+    }
+
 
 }

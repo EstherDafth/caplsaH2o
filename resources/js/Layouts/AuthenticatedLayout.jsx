@@ -57,11 +57,21 @@ export default function AuthenticatedLayout({ header, children }) {
                             </NavLink>
 
                                 <NavLink
-                                    href={route('contratos.index')}
-                                    active={route().current('contratos.index')}
+                                    href={route('gestion-contratos.index')}
+                                    active={route().current('gestion-contratos.index')}
                                 >
                                     Descargar Contrato
                                 </NavLink>
+
+                                <NavLink href={route('aportaciones.index')} active={route().current('aportaciones.index')}>
+                                Aportaciones
+                                </NavLink>
+
+                                <NavLink href={route('egresos.index')} active={route().current('egresos.index')}>
+                                    Egresos
+                                </NavLink>
+
+
                             </div>
                         </div>
 

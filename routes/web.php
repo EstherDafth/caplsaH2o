@@ -8,14 +8,7 @@ use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\DireccionController;
 use App\Http\Controllers\TomaAguaController;
 use App\Http\Controllers\ContratoController;
-use App\Http\Controllers\GestionContratoController;
-use App\Http\Controllers\FilesController;
 
-Route::prefix('files')->group(function () {
-    Route::get('/download/{filename}', [FilesController::class, 'download'])->name('files.download');
-    Route::get('/view/{filename}', [FilesController::class, 'view'])->name('files.view');
-    Route::delete('/delete/{filename}', [FilesController::class, 'delete'])->name('files.delete');
-});
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -112,11 +105,28 @@ Route::post('/direccion', [DireccionController::class, 'store'])->name('direccio
 Route::get('/contratos/pdf/{id}', [ContratoController::class, 'generarPDF'])->name('contratos.pdf');
 Route::get('/contratos/{numero}/pdf', [ContratoController::class, 'descargarPDF']);
 
-// Agrupadas en un controlador llamado GestionContratoController
-Route::prefix('gestion-contratos')->group(function () {
-    Route::get('/', [GestionContratoController::class, 'index'])->name('gestion-contratos.index'); // Lista
-    Route::get('/{id}/edit', [GestionContratoController::class, 'edit'])->name('gestion-contratos.edit'); // Formulario de edición
-    Route::put('/{id}', [GestionContratoController::class, 'update'])->name('gestion-contratos.update'); // Guardar edición
-    Route::delete('/{id}', [GestionContratoController::class, 'destroy'])->name('gestion-contratos.destroy'); // Eliminar
-    Route::get('/{id}/pdf', [GestionContratoController::class, 'generarPDF'])->name('gestion-contratos.pdf'); // Descargar PDF
+use App\Http\Controllers\GestionContratoController;
+
+Route::get('/gestion-contratos', [GestionContratoController::class, 'index'])->name('gestion-contratos.index');
+Route::get('/gestion-contratos/{id}/edit', [GestionContratoController::class, 'edit'])->name('gestion-contratos.edit');
+Route::delete('/gestion-contratos/{id}', [GestionContratoController::class, 'destroy'])->name('gestion-contratos.destroy');
+Route::get('/gestion-contratos/{id}/edit', [GestionContratoController::class, 'edit']);
+Route::put('/gestion-contratos/{id}', [GestionContratoController::class, 'update']);
+
+Route::resource('aportaciones', AportacionController::class);
+
+use App\Http\Controllers\AportacionController;
+
+Route::middleware(['auth'])->group(function () {
+    Route::resource('aportaciones', AportacionController::class)->only([
+        'index', 'store', 'update', 'destroy'
+    ]);
 });
+
+use App\Http\Controllers\EgresoController;
+
+Route::get('/egresos', [EgresoController::class, 'index'])->name('egresos.index');
+Route::post('/egresos', [EgresoController::class, 'store']);
+Route::put('/egresos/{id}', [EgresoController::class, 'update']);
+Route::delete('/egresos/{id}', [EgresoController::class, 'destroy']);
+
